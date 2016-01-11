@@ -1,0 +1,155 @@
+#!/bin/sh
+
+# download btsync binary and add to $PATH if necessary.
+if ! which btsync &>/dev/null; then
+    if [[ $(uname -m) == x86_64 ]]; then
+        wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
+    else
+        wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
+    fi | tar zxvf - btsync
+    PATH=.:$PATH
+fi
+
+# http://img.ezloo.com/docs/BitTorrentSyncUserGuide.pdf
+# https://wiki.archlinux.org/index.php/BitTorrent_Sync
+
+# save config pattern to a new variable.
+read -r -d '' btsync_config <<'HEREDOC'
+// Need more help, see http://help.getsync.com/hc/en-us/articles/204762669
+
+{
+  "device_name": "$USER@$hostname",
+  "storage_path": "$HOME/.btsync_nopain",
+  "listening_port": 0,                          // default, random port
+  "external_port": 0,                           // default, random port
+  "config_save_interval": 600,                  // default, Sec
+  // "bind_interface": "wlan0",                    // this option is no default.
+  "disk_low_priority": false,
+  "lan_encrypt_data": false,
+  "rate_limit_local_peers": false,              // default
+  "use_upnp": true,
+  "download_limit": 0,
+  "upload_limit": 0,
+  "send_statistics": false,
+  "max_file_size_diff_for_patching": 10,
+  "max_file_size_for_versioning": 1000,         // default, MB
+  "folder_rescan_interval": 600,                // default, Sec
+  "sync_max_time_diff": 600,                    // default, Sec
+  "send_buf_size": 10,                          // default, MB
+  "recv_buf_size": 10,                          // default, MB
+  "max_torrent_metadata_size": 10,              // default, MB
+  "log_size": 100,                              // default, MB
+  "log_ttl": 7,                                 // default, Day
+  "profiler_enabled": false,                    // default
+  "peer_expiration_days": 7,                    // default, Day
+  "sync_trash_ttl": 30,                         // default
+  "shared_folders":
+  [
+    {
+      "secret": "$secret",
+      "dir": "$HOME/sync",
+      "use_relay_server": false,
+      "use_tracker": false,
+      "search_lan": true,                       // default
+      "use_sync_trash": true,                   // default
+      "overwrite_changes": false
+    }
+  ]
+}
+HEREDOC
+
+# get secret from exist config if it exist, generate a new one otherwise.
+export secret=$(
+    if [ -f ~/.btsync_nopain.json ]; then
+        cat ~/.btsync_nopain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
+    else
+        btsync --generate-secret
+    fi
+)
+export hostname=$(hostname)
+
+if [ -f ~/.btsync_nopain.json ]; then
+    echo "=> Use exist config file [0m[33m$HOME/.btsync_nopain.json[0m"
+else
+    echo "=> Createing config file [0m[33m$HOME/.btsync_nopain.json[0m for master device (current device)."
+    echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
+fi
+
+source_directory=$(cat ~/.btsync_nopain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
+echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
+mkdir -p ~/.btsync_nopain $source_directory
+
+echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_nopain.json[0m ...'
+while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
+btsync --config ~/.btsync_nopain.json |fgrep 'Error' && exit || echo 'Started.'
+
+# try to figure out current synchronization device network interface ip address.
+# it maybe not correct if more than one ethernet is configured in your's computer.
+# in this case, just use the correct ip instead.
+ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
+
+echo
+
+if [ $ip ]; then
+    read -p "Slave(target) device is synchronized with READONLY access authority? [yes/no] (Ctrl+C to exit) " yn
+    case $yn in
+        [Yy]es)
+            secret=$(btsync --get-ro-secret $secret)
+    esac
+    cat <<HEREDOC
+
+NOTICE: KEEP AWAY FROM KEYBOARD, GOTO \`SLAVE DEVICE' DO AS FOLLOWING:
+
+step 1. Run \`[0m[33mnc $ip 2000 | bash -s[0m' in slave device (another pc) to start sync, NO PAIN!
+        (If IP address is not correct, use correct IP address instead)
+
+step 2. Copy btsync executable file downloaded (./btsync) to your's system \$PATH (e.g. /usr/local/bin)
+        add \`[0m[33mbtsync --config ~/.btsync_nopain.json[0m' to system startup script (e.g. ~/.bashrc)
+
+NO CONFIG is needed, start to sync within 10 seconds with NO PAIN!
+
+[0m[31mWARN: MAKE SURE YOU READ THE FOLLOWING CONTENT BEFORE USE THIS SCRIPT!![0mm
+
+The purpose of this small script is for synchronization inside home, company or host/VM where more
+safe place use only, many config option is optimize for ths purpose, If you want sync through internet,
+adjust configuration to fit for this demand.
+
+[0m[33mNOT TOLD ANYONE WHOSE NOT TRUST THE SECRET GENERATE FOR YOU!!
+THE MAN HAVE THIS KEY CAN DAMAGE YOUR'S DATA!![0m
+
+If you found your's secret is leak, remove ~/.btsync_nopain.json on all syncing device immediately.
+And regenerate new secret with this script again, good luck!
+
+Any suggest is welcome at https://github.com/zw963/btsync_nopain/issues.
+
+HEREDOC
+nc -l $ip 2000 <<-HEREDOC
+
+      if ! which btsync &>/dev/null; then
+          if [[ \$(uname -m) == x86_64 ]]; then
+              wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
+          else
+              wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
+          fi | tar zxvf - btsync
+          PATH=.:$PATH
+      fi
+
+      export secret=$secret
+      export hostname=$(hostname)
+      export btsync_config='$btsync_config'
+
+      echo '=> Creating config file ~/.btsync_nopain.json for slave device.'
+      echo "\$btsync_config" |envsubst > ~/.btsync_nopain.json
+
+      echo "=> Syncing directory is ~/sync, put file in there to start."
+      echo "=> you can change directory name in config file later."
+      mkdir -p ~/.btsync_nopain ~/sync
+
+      echo '=> Starting syncing service with new config ...'
+      while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
+      btsync --config ~/.btsync_nopain.json |fgrep 'Error' || echo 'Started.'
+HEREDOC
+else
+    echo 'Could not found Network interface IP address, are you connection to network?'
+    echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_nopain/issues.'
+fi
