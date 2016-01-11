@@ -1,19 +1,15 @@
 This small script is for quickly start synchronize data with ![BitTorrent Sync](https://getsync.com/) between your device.
 should be start to work less than 10 seconds with internet connection(for download btsync binary only)
 
-About BitTorrent Sync more Documents, Please refer to
-
-* http://img.ezloo.com/docs/BitTorrentSyncUserGuide.pdf
-* https://wiki.archlinux.org/index.php/BitTorrent_Sync
-* http://help.getsync.com/hc/en-us/articles/204762669
-
 ## Philosophy
 initialize a worked btsync config with minimum effort, make synchronize between two device
-start to work imediately with NO PAIN.
+start to work immediately in config mode with NO PAIN.
 
-It convenient for sync data between home/compary localnet pc, between host and virtual machine etc.
-after change some config, can worked through internet. be careful to understood config completely
-before do this.
+It convenient for sync data between home/compary localnet pc, between host and virtual machine
+and autobackup things, after change some config, can worked through internet. be careful to
+understood config completely before do this.
+
+About BitTorrent Sync Documents, Please refer to ![Running Sync in configuration mode](http://help.getsync.com/hc/en-us/articles/204762689-Running-Sync-in-configuration-mode#overview)
 
 ## Requirement
 need netcat installed (should be there in most UNIX like system)

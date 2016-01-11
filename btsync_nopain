@@ -10,51 +10,68 @@ if ! which btsync &>/dev/null; then
     PATH=.:$PATH
 fi
 
-# http://img.ezloo.com/docs/BitTorrentSyncUserGuide.pdf
-# https://wiki.archlinux.org/index.php/BitTorrent_Sync
-
 # save config pattern to a new variable.
 read -r -d '' btsync_config <<'HEREDOC'
 // Need more help, see http://help.getsync.com/hc/en-us/articles/204762669
+// http://sync-help.bittorrent.com/customer/en/portal/articles/1590260-preferences-explained?b_id=3885
+// Get a example config here: http://syncapp.bittorrent.com/support/sample.conf
 
 {
   "device_name": "$USER@$hostname",
   "storage_path": "$HOME/.btsync_nopain",
-  "listening_port": 0,                          // default, random port
-  "external_port": 0,                           // default, random port
-  "config_save_interval": 600,                  // default, Sec
-  // "bind_interface": "wlan0",                    // this option is no default.
-  "disk_low_priority": false,
-  "lan_encrypt_data": false,
-  "rate_limit_local_peers": false,              // default
-  "use_upnp": true,
-  "download_limit": 0,
-  "upload_limit": 0,
-  "send_statistics": false,
-  "max_file_size_diff_for_patching": 10,
-  "max_file_size_for_versioning": 1000,         // default, MB
-  "folder_rescan_interval": 600,                // default, Sec
-  "sync_max_time_diff": 600,                    // default, Sec
-  "send_buf_size": 10,                          // default, MB
-  "recv_buf_size": 10,                          // default, MB
-  "max_torrent_metadata_size": 10,              // default, MB
-  "log_size": 100,                              // default, MB
-  "log_ttl": 7,                                 // default, Day
-  "profiler_enabled": false,                    // default
-  "peer_expiration_days": 7,                    // default, Day
-  "sync_trash_ttl": 30,                         // default
+  "lan_encrypt_data": false,                    // disable encrypt in lan only, less cpu usage, better speed.
+  "send_statistics": false,                     // disable send statistical metrics to BitTorrent server.
+  "sync_max_time_diff": 60,                     // default is 600 seconds, decrease for sync is more accuracy.
+  "send_buf_size": 128,                         // default is 10 MB, increase for better speed.
+  "recv_buf_size": 128,                         // default is 10 MB, increase for better speed.
+  "max_file_size_for_versioning": 100,          // defaut is 1000 MB, here only version small version.
+
+  /* global default option will be used. */
+  // "check_for_updates": true,
+  // "listening_port": 0,                          // pick random port
+  // "external_port": 0,                           // no set
+  // "config_save_interval": 600,                  // in second
+  // "bind_interface": "wlan0",                    // no set
+  // "disk_low_priority": true,                    // minmum the impact to disk, less syncing speed.
+  // "rate_limit_local_peers": false,
+  // "use_upnp": true,
+  // "download_limit": 0,                          // no limit
+  // "upload_limit": 0,                            // no limit
+  // "profiler_enabled": false,
+  // "max_file_size_diff_for_patching": 1000,      // MB
+  // "folder_rescan_interval": 600,                // in second
+  // "max_torrent_metadata_size": 16,              // in MB
+  // "log_size": 100,                              // in MB
+  // "log_ttl": 7,                                 // in day
+  // "peer_expiration_days": 7,                    // in day
+  // "sync_trash_ttl": 30,                         // in day
+
   "shared_folders":
   [
     {
-      "secret": "$secret",
-      "dir": "$HOME/sync",
-      "use_relay_server": false,
-      "use_tracker": false,
-      "search_lan": true,                       // default
-      "use_sync_trash": true,                   // default
-      "overwrite_changes": false
+      "secret": "$secret",                      // sync key, beginning with A is RW key, B is RO key.
+      "dir": "$HOME/sync",                      // directory to sync
+      "use_relay_server": false,                // no use relay server, used with search_lan option
+      "use_tracker": false,                     // no use tracker server, used with search_lan option
+      "overwrite_changes": true,                // greedy restore files changed by RO device only if this file is
+                                                // not initializing created inside RO device. valid for RO device only.
+      "known_hosts":                            // specify hosts to attempt connection without additional search
+      [
+        // "192.168.1.2:44444"
+      ]
+      /* folder default options will be used. */
+      // "search_lan": true,                       // search localnet for other btsync instance.
+      // "use_sync_trash": true,                   // Store deleted files in folder archive
     }
   ]
+
+  /* only use those if you need a proxy for communication. */
+  // "proxy_type": "socks4", // Valid types: "socks4", "socks5", "http_connect". Any other value means no proxy
+  // "proxy_addr": "192.168.1.2", // IP address of proxy server.
+  // "proxy_port": 1080,
+  // "proxy_auth": false, // Use authentication for proxy. Note: only username/password for socks5 (RFC 1929) is supported, and it is not really secure
+  // "proxy_username": "user",
+  // "proxy_password": "password",
 }
 HEREDOC
 
@@ -91,10 +108,13 @@ ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |
 echo
 
 if [ $ip ]; then
-    read -p "Slave(target) device is synchronized with READONLY access authority? [yes/no] (Ctrl+C to exit) " yn
+    read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
     case $yn in
         [Yy]es)
             secret=$(btsync --get-ro-secret $secret)
+            ;;
+            *)
+            echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
     esac
     cat <<HEREDOC
 
@@ -108,11 +128,11 @@ step 2. Copy btsync executable file downloaded (./btsync) to your's system \$PAT
 
 NO CONFIG is needed, start to sync within 10 seconds with NO PAIN!
 
-[0m[31mWARN: MAKE SURE YOU READ THE FOLLOWING CONTENT BEFORE USE THIS SCRIPT!![0mm
+[0m[31mWARN: MAKE SURE YOU READ THE FOLLOWING CONTENT BEFORE USE THIS SCRIPT!![0m
 
 The purpose of this small script is for synchronization inside home, company or host/VM where more
-safe place use only, many config option is optimize for ths purpose, If you want sync through internet,
-adjust configuration to fit for this demand.
+safe place use only, many config option is optimize for this purpose, If you want sync through internet,
+adjust configuration to fit your demand.
 
 [0m[33mNOT TOLD ANYONE WHOSE NOT TRUST THE SECRET GENERATE FOR YOU!!
 THE MAN HAVE THIS KEY CAN DAMAGE YOUR'S DATA!![0m
@@ -120,7 +140,7 @@ THE MAN HAVE THIS KEY CAN DAMAGE YOUR'S DATA!![0m
 If you found your's secret is leak, remove ~/.btsync_nopain.json on all syncing device immediately.
 And regenerate new secret with this script again, good luck!
 
-Any suggest is welcome at https://github.com/zw963/btsync_nopain/issues.
+Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_nopain/issues.
 
 HEREDOC
 nc -l $ip 2000 <<-HEREDOC
