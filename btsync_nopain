@@ -1,13 +1,52 @@
-#!/bin/sh
+#!/bin/bash
 
 # download btsync binary and add to $PATH if necessary.
+
 if ! which btsync &>/dev/null; then
-    if [[ $(uname -m) == x86_64 ]]; then
-        wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
-    else
-        wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
-    fi | tar zxvf - btsync
-    PATH=.:$PATH
+    case "$OSTYPE" in
+        darwin*)
+            echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
+            echo 'and install it manually, then run this script again.'
+            exit
+            ;;
+        linux*)
+            case $(uname -m) in
+                i?86)
+                    download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
+                    ;;
+                *64)
+                    download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
+                    ;;
+                *)
+                    download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
+            esac
+            if ! which wget &>/dev/null; then
+                echo 'install wget first.'
+                exit
+            fi
+            wget -c -nc -O - $download | tar zxvf - btsync
+            PATH=.:$PATH
+            ;;
+        *BSD|*bsd)
+            case $(uname -m) in
+                i?86)
+                    download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
+                    ;;
+                *64)
+                    download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
+                    ;;
+            esac
+            if ! which wget &>/dev/null; then
+                echo 'install wget first.'
+                exit
+            fi
+            wget -c -nc -O - $download | tar zxvf - btsync
+            PATH=.:$PATH
+            ;;
+        *)
+            echo "$OSTYPE is not current supported by btsync."
+            exit
+    esac
 fi
 
 # save config pattern to a new variable.
@@ -75,48 +114,48 @@ read -r -d '' btsync_config <<'HEREDOC'
 }
 HEREDOC
 
-# get secret from exist config if it exist, generate a new one otherwise.
-export secret=$(
-    if [ -f ~/.btsync_nopain.json ]; then
-        cat ~/.btsync_nopain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
-    else
-        btsync --generate-secret
-    fi
-)
-export hostname=$(hostname)
+  # get secret from exist config if it exist, generate a new one otherwise.
+  export secret=$(
+      if [ -f ~/.btsync_nopain.json ]; then
+          cat ~/.btsync_nopain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
+      else
+          btsync --generate-secret
+      fi
+  )
+  export hostname=$(hostname)
 
-if [ -f ~/.btsync_nopain.json ]; then
-    echo "=> Use exist config file [0m[33m$HOME/.btsync_nopain.json[0m"
-else
-    echo "=> Createing config file [0m[33m$HOME/.btsync_nopain.json[0m for master device (current device)."
-    echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
-fi
+  if [ -f ~/.btsync_nopain.json ]; then
+      echo "=> Use exist config file [0m[33m$HOME/.btsync_nopain.json[0m"
+  else
+      echo "=> Createing config file [0m[33m$HOME/.btsync_nopain.json[0m for master device (current device)."
+      echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
+  fi
 
-source_directory=$(cat ~/.btsync_nopain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
-echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
-mkdir -p ~/.btsync_nopain $source_directory
+  source_directory=$(cat ~/.btsync_nopain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
+  echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
+  mkdir -p ~/.btsync_nopain $source_directory
 
-echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_nopain.json[0m ...'
-while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
-btsync --config ~/.btsync_nopain.json |fgrep 'Error' && exit || echo 'Started.'
+  echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_nopain.json[0m ...'
+  while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
+  btsync --config ~/.btsync_nopain.json |fgrep 'Error' && exit || echo 'Started.'
 
-# try to figure out current synchronization device network interface ip address.
-# it maybe not correct if more than one ethernet is configured in your's computer.
-# in this case, just use the correct ip instead.
-ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
+  # try to figure out current synchronization device network interface ip address.
+  # it maybe not correct if more than one ethernet is configured in your's computer.
+                                          # in this case, just use the correct ip instead.
+                                          ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
 
-echo
+                                          echo
 
-if [ $ip ]; then
-    read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
-    case $yn in
-        [Yy]es)
-            secret=$(btsync --get-ro-secret $secret)
-            ;;
-            *)
-            echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
-    esac
-    cat <<HEREDOC
+                                          if [ $ip ]; then
+                                              read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
+                                              case $yn in
+                                                  [Yy]es)
+                                                      secret=$(btsync --get-ro-secret $secret)
+                                                      ;;
+                                                  *)
+                                                      echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
+                                              esac
+                                              cat <<HEREDOC
 
 NOTICE: KEEP AWAY FROM KEYBOARD, GOTO \`SLAVE DEVICE' DO AS FOLLOWING:
 
@@ -143,23 +182,69 @@ And regenerate new secret with this script again, good luck!
 Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_nopain/issues.
 
 HEREDOC
-nc -l $ip 2000 <<-HEREDOC
+                                              nc -l $ip 2000 <<-HEREDOC
 
-      if ! which btsync &>/dev/null; then
-          if [[ \$(uname -m) == x86_64 ]]; then
-              wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
-          else
-              wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
-          fi | tar zxvf - btsync
-          PATH=.:$PATH
-      fi
+      # if ! which btsync &>/dev/null; then
+      #     if [[ \$(uname -m) == x86_64 ]]; then
+      #         wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
+      #     else
+      #         wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
+      #     fi | tar zxvf - btsync
+      #     PATH=.:\$PATH
+      # fi
+
+if ! which btsync &>/dev/null; then
+    case "\$OSTYPE" in
+        darwin*)
+            echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
+            echo 'and install it manually, then run this script again.'
+            exit
+            ;;
+        linux*)
+            case \$(uname -m) in
+                i?86)
+                    download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
+                    ;;
+                *64)
+                    download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
+                    ;;
+                *)
+                    download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
+            esac
+            if !which wget &>/dev/null; then
+                echo 'install wget first.'
+                exit
+            fi
+            wget -c -nc -O - \$download | tar zxvf - btsync
+            PATH=.:\$PATH
+            ;;
+        bsd*)
+            case \$(uname -m) in
+                i?86)
+                    download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
+                    ;;
+                *64)
+                    download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
+                    ;;
+            esac
+            if !which wget &>/dev/null; then
+                echo 'install wget first.'
+                exit
+            fi
+            wget -c -nc -O - \$download | tar zxvf - btsync
+            PATH=.:\$PATH
+            ;;
+        *)
+            echo "\$OSTYPE is not current supported by btsync."
+            exit
+    esac
+fi
 
       export secret=$secret
-      export hostname=$(hostname)
-      export btsync_config='$btsync_config'
+      export hostname=\$(hostname)
 
       echo '=> Creating config file ~/.btsync_nopain.json for slave device.'
-      echo "\$btsync_config" |envsubst > ~/.btsync_nopain.json
+      echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
 
       echo "=> Syncing directory is ~/sync, put file in there to start."
       echo "=> you can change directory name in config file later."
@@ -169,7 +254,7 @@ nc -l $ip 2000 <<-HEREDOC
       while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
       btsync --config ~/.btsync_nopain.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
-else
-    echo 'Could not found Network interface IP address, are you connection to network?'
-    echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_nopain/issues.'
-fi
+                                          else
+                                              echo 'Could not found Network interface IP address, are you connection to network?'
+                                              echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_nopain/issues.'
+                                          fi

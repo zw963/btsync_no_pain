@@ -12,7 +12,7 @@ understood config completely before do this.
 About BitTorrent Sync Documents, Please refer to [Running Sync in configuration mode](http://help.getsync.com/hc/en-us/articles/204762689-Running-Sync-in-configuration-mode#overview)
 
 ## Requirement
-need netcat installed (should be there in most UNIX like system)
+Need `nc`, `wget` `which` and `tar` is installed (should be there in most UNIX like system)
 Need BitTorrent Sync support this platform.
 
 ## Getting Started
@@ -34,9 +34,7 @@ will See following WARN message for you:
 
 ![btsync_nopain2.png](images/btsync_nopain2.png)
 
-Follow the instructions, goto slave device to complete configuration settings.
-
-Basically, Open your's terminal in slave device, input following:
+Basically, Open your's terminal in **slave device**, input following:
 
 $ nc *MASTER_DEVICE_IP_ADDRESS* 2000
 
