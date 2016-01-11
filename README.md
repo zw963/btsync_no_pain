@@ -38,9 +38,7 @@ Follow the instructions, goto slave device to complete configuration settings.
 
 Basically, Open your's terminal in slave device, input following:
 
-```sh
-  $ nc MASTER_DEVICE_IP_address 2000
-```
+$ nc *MASTER_DEVICE_IP_ADDRESS* 2000
 
 it Down! If lucky enough, btsync is syncing between master and slave device with folder ~/sync,
 Just have a try.
