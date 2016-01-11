@@ -1,4 +1,4 @@
-This small script is for quickly start synchronize data with ![BitTorrent Sync](https://getsync.com/) between your device.
+This small script is for quickly start synchronize data with [BitTorrent Sync](https://getsync.com/) between your device.
 should be start to work less than 10 seconds with internet connection(for download btsync binary only)
 
 ## Philosophy
@@ -9,7 +9,7 @@ It convenient for sync data between home/compary localnet pc, between host and v
 and autobackup things, after change some config, can worked through internet. be careful to
 understood config completely before do this.
 
-About BitTorrent Sync Documents, Please refer to ![Running Sync in configuration mode](http://help.getsync.com/hc/en-us/articles/204762689-Running-Sync-in-configuration-mode#overview)
+About BitTorrent Sync Documents, Please refer to [Running Sync in configuration mode](http://help.getsync.com/hc/en-us/articles/204762689-Running-Sync-in-configuration-mode#overview)
 
 ## Requirement
 need netcat installed (should be there in most UNIX like system)
@@ -26,13 +26,13 @@ Run this script:
 ```
 Will ask you whether synchronized with READONLY access authority.
 
-[![btsync_nopain1.png](images/btsync_nopain1.png)]
+![btsync_nopain1.png](images/btsync_nopain1.png)
 
 Press yes if you hope slave device can only sync but no change, or vice versa.
 
 will See following WARN message for you:
 
-[![btsync_nopain2.png](images/btsync_nopain2.png)]
+![btsync_nopain2.png](images/btsync_nopain2.png)
 
 Follow the instructions, goto slave device to complete configuration settings.
 
@@ -52,7 +52,7 @@ currently not test with BSD like system, maybe exist bug.
 ## Limitations
 * Windows is current not supported.
 * BitTorrent Sync Web UI is closed.
-* btsync is not open source, maybe use ![syncthing](https://github.com/syncthing/syncthing) instead.
+* btsync is not open source, maybe use [syncthing](https://github.com/syncthing/syncthing) instead.
 
 ## History
   See [CHANGELOG](https://github.com/zw963/btsync_nopain/blob/master/CHANGELOG) for details.
