@@ -26,13 +26,13 @@ Run this script:
 ```
 Will ask you whether synchronized with READONLY access authority.
 
-[![btsync_nopain1.png](https://zw963.github.io/btsync_nopain1.png)]
+[![btsync_nopain1.png](images/btsync_nopain1.png)]
 
 Press yes if you hope slave device can only sync but no change, or vice versa.
 
 will See following WARN message for you:
 
-[![btsync_nopain2.png](https://zw963.github.io/btsync_nopain2.png)]
+[![btsync_nopain2.png](images/btsync_nopain2.png)]
 
 Follow the instructions, goto slave device to complete configuration settings.
 
