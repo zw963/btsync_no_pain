@@ -22,28 +22,28 @@ Make your two device sync immediately only need two step!
 Step one, down script to local, Open your's terminal:
 Linux:
 ```sh
-  $ wget https://raw.githubusercontent.com/zw963/btsync_nopain/master/btsync_nopain
+  $ wget https://raw.githubusercontent.com/zw963/btsync_no_pain/master/btsync_no_pain
 ```
 
 BSD, if not wget is installed.
 ```sh
-  $ curl https://raw.githubusercontent.com/zw963/btsync_nopain/master/btsync_nopain > btsync_nopain
+  $ curl https://raw.githubusercontent.com/zw963/btsync_no_pain/master/btsync_no_pain > btsync_no_pain
 ```
 Run this script with bash.
 ```sh
-  $ bash btsync_nopain
+  $ bash btsync_no_pain
 ```
 In this step, this script will try download btsync to current device (if not exist), and
 start btsync with a predefined config, and then ask you whether synchronized to another
 device with **readonly** access authority.
 
-![btsync_nopain1.png](images/btsync_nopain1.png)
+![btsync_no_pain1.png](images/btsync_no_pain1.png)
 
 Press yes for readonly sync, or vice versa.
 
 will See following WARN message for you:
 
-![btsync_nopain2.png](images/btsync_nopain2.png)
+![btsync_no_pain2.png](images/btsync_no_pain2.png)
 
 Step Two, is operate in another device(Slave device), Please read WARN carefully,
 and open your's **slave device** terminal, input:
@@ -68,11 +68,11 @@ currently not test with BSD like system, maybe exist bug.
 * btsync is not open source, maybe use [syncthing](https://github.com/syncthing/syncthing) instead.
 
 ## History
-  See [CHANGELOG](https://github.com/zw963/btsync_nopain/blob/master/CHANGELOG) for details.
+  See [CHANGELOG](https://github.com/zw963/btsync_no_pain/blob/master/CHANGELOG) for details.
   
 ## Contributing
-  * [Bug reports](https://github.com/zw963/btsync_nopain/issues)
-  * [Source](https://github.com/zw963/btsync_nopain)
+  * [Bug reports](https://github.com/zw963/btsync_no_pain/issues)
+  * [Source](https://github.com/zw963/btsync_no_pain)
   * Patches:
     * Fork on Github.
     * Create your feature branch: \`git checkout -b my-new-feature\`.

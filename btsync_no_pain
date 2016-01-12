@@ -57,7 +57,7 @@ read -r -d '' btsync_config <<'HEREDOC'
 
 {
   "device_name": "$USER@$hostname",
-  "storage_path": "$HOME/.btsync_nopain",
+  "storage_path": "$HOME/.btsync_no_pain",
   "lan_encrypt_data": false,                    // disable encrypt in lan only, less cpu usage, better speed.
   "send_statistics": false,                     // disable send statistical metrics to BitTorrent server.
   "sync_max_time_diff": 60,                     // default is 600 seconds, decrease for sync is more accuracy.
@@ -116,28 +116,28 @@ HEREDOC
 
   # get secret from exist config if it exist, generate a new one otherwise.
   export secret=$(
-      if [ -f ~/.btsync_nopain.json ]; then
-          cat ~/.btsync_nopain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
+      if [ -f ~/.btsync_no_pain.json ]; then
+          cat ~/.btsync_no_pain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
       else
           btsync --generate-secret
       fi
   )
   export hostname=$(hostname)
 
-  if [ -f ~/.btsync_nopain.json ]; then
-      echo "=> Use exist config file [0m[33m$HOME/.btsync_nopain.json[0m"
+  if [ -f ~/.btsync_no_pain.json ]; then
+      echo "=> Use exist config file [0m[33m$HOME/.btsync_no_pain.json[0m"
   else
-      echo "=> Createing config file [0m[33m$HOME/.btsync_nopain.json[0m for master device (current device)."
-      echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
+      echo "=> Createing config file [0m[33m$HOME/.btsync_no_pain.json[0m for master device (current device)."
+      echo "$btsync_config" |envsubst > ~/.btsync_no_pain.json
   fi
 
-  source_directory=$(cat ~/.btsync_nopain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
+  source_directory=$(cat ~/.btsync_no_pain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
   echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
-  mkdir -p ~/.btsync_nopain $source_directory
+  mkdir -p ~/.btsync_no_pain $source_directory
 
-  echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_nopain.json[0m ...'
+  echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_no_pain.json[0m ...'
   while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
-  btsync --config ~/.btsync_nopain.json |fgrep 'Error' && exit || echo 'Started.'
+  btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
 
   # try to figure out current synchronization device network interface ip address.
   # it maybe not correct if more than one ethernet is configured in your's computer.
@@ -163,7 +163,7 @@ step 1. Run \`[0m[33mnc $ip 2000 | bash -s[0m' in slave device (another pc) t
         (If IP address is not correct, use correct IP address instead)
 
 step 2. Copy btsync executable file downloaded (./btsync) to your's system \$PATH (e.g. /usr/local/bin)
-        add \`[0m[33mbtsync --config ~/.btsync_nopain.json[0m' to system startup script (e.g. ~/.bashrc)
+        add \`[0m[33mbtsync --config ~/.btsync_no_pain.json[0m' to system startup script (e.g. ~/.bashrc)
 
 NO CONFIG is needed, start to sync within 10 seconds with NO PAIN!
 
@@ -176,10 +176,10 @@ adjust configuration to fit your demand.
 [0m[33mNOT TOLD ANYONE WHOSE NOT TRUST THE SECRET GENERATE FOR YOU!!
 THE MAN HAVE THIS KEY CAN DAMAGE YOUR'S DATA!![0m
 
-If you found your's secret is leak, remove ~/.btsync_nopain.json on all syncing device immediately.
+If you found your's secret is leak, remove ~/.btsync_no_pain.json on all syncing device immediately.
 And regenerate new secret with this script again, good luck!
 
-Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_nopain/issues.
+Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_no_pain/issues.
 
 HEREDOC
                                               nc -l $ip 2000 <<-HEREDOC
@@ -233,18 +233,18 @@ fi
       export secret=$secret
       export hostname=\$(hostname)
 
-      echo '=> Creating config file ~/.btsync_nopain.json for slave device.'
-      echo '$btsync_config' |envsubst > ~/.btsync_nopain.json
+      echo '=> Creating config file ~/.btsync_no_pain.json for slave device.'
+      echo '$btsync_config' |envsubst > ~/.btsync_no_pain.json
 
       echo "=> Syncing directory is ~/sync, put file in there to start."
       echo "=> you can change directory name in config file later."
-      mkdir -p ~/.btsync_nopain ~/sync
+      mkdir -p ~/.btsync_no_pain ~/sync
 
       echo '=> Starting syncing service with new config ...'
       while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
-      btsync --config ~/.btsync_nopain.json |fgrep 'Error' || echo 'Started.'
+      btsync --config ~/.btsync_no_pain.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
                                           else
                                               echo 'Could not found Network interface IP address, are you connection to network?'
-                                              echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_nopain/issues.'
+                                              echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
                                           fi
