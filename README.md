@@ -59,7 +59,10 @@ Basically, the last step do following things:
 3. do the same things with master deivce (e.g. download, start)
 
 ## Support
-should worked with any Unix system with netcat is installed.
+Should worked with Linux/BSD/OSX/Andorid.
+
+Andorid need install busybox (can offer wget command)
+
 currently not test with BSD like system, maybe exist bug.
 
 ## Limitations
