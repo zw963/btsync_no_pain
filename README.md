@@ -61,9 +61,10 @@ Basically, the last step do following things:
 ## Support
 Should worked with Linux/BSD/OSX/Andorid.
 
-Andorid need install busybox (can offer wget command)
+OSX need install btsync with official dmg package first, current not test.
 
-currently not test with BSD like system, maybe exist bug.
+Andorid Support is irrelevant of offical btsync apk package, it need adbtools to install
+[busybox](https://www.busybox.net/downloads/binaries/busybox-armv5l) (with wget, uname command), current not tested.
 
 ## Limitations
 * Windows is current not supported.
