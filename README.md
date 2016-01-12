@@ -12,34 +12,51 @@ understood config completely before do this.
 About BitTorrent Sync Documents, Please refer to [Running Sync in configuration mode](http://help.getsync.com/hc/en-us/articles/204762689-Running-Sync-in-configuration-mode#overview)
 
 ## Requirement
-Need `nc`, `wget` `which` and `tar` is installed (should be there in most UNIX like system)
-Need BitTorrent Sync support this platform.
+1. netcat(nc) is required for transmit script from one device to another device.
+2. `wget` is required in linux, `curl` is required in BSD (should be there in most UNIX like system)
+3. Need BitTorrent Sync support this platform.
 
 ## Getting Started
-Open your's terminal, input following:
+Make your two device sync immediately only need two step!
+
+Step one, down script to local, Open your's terminal:
+Linux:
 ```sh
   $ wget https://raw.githubusercontent.com/zw963/btsync_nopain/master/btsync_nopain
 ```
-Run this script:
+
+BSD, if not wget is installed.
+```sh
+  $ curl https://raw.githubusercontent.com/zw963/btsync_nopain/master/btsync_nopain > btsync_nopain
+```
+Run this script with bash.
 ```sh
   $ bash btsync_nopain
 ```
-Will ask you whether synchronized with READONLY access authority.
+In this step, this script will try download btsync to current device (if not exist), and
+start btsync with a predefined config, and then ask you whether synchronized to another
+device with **readonly** access authority.
 
 ![btsync_nopain1.png](images/btsync_nopain1.png)
 
-Press yes if you hope slave device can only sync but no change, or vice versa.
+Press yes for readonly sync, or vice versa.
 
 will See following WARN message for you:
 
 ![btsync_nopain2.png](images/btsync_nopain2.png)
 
-Basically, Open your's terminal in **slave device**, input following:
+Step Two, is operate in another device(Slave device), Please read WARN carefully,
+and open your's **slave device** terminal, input:
 
 $ nc *MASTER_DEVICE_IP_ADDRESS* 2000
 
-it Down! If lucky enough, btsync is syncing between master and slave device with folder ~/sync,
-Just have a try.
+it Done! your's two device `~/sync` folder should be syncing now, Just have a try.
+
+Basically, the last step do following things:
+
+1. Generate **slave device** btsync predefined config according to **master device** config.
+2. transmit this script to slave deivce, and run it with bash in slave device.
+3. do the same things with master deivce (e.g. download, start)
 
 ## Support
 should worked with any Unix system with netcat is installed.
