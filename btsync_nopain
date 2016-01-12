@@ -2,7 +2,7 @@
 
 # download btsync binary and add to $PATH if necessary.
 
-if ! which btsync &>/dev/null; then
+if ! which btsync 1>/dev/null; then
     case "$OSTYPE" in
         darwin*)
             echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
@@ -20,7 +20,7 @@ if ! which btsync &>/dev/null; then
                 *)
                     download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
             esac
-            if ! which wget &>/dev/null; then
+            if ! which wget 1>/dev/null; then
                 echo 'install wget first.'
                 exit
             fi
@@ -36,7 +36,7 @@ if ! which btsync &>/dev/null; then
                     download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
                     ;;
             esac
-            if ! which wget &>/dev/null; then
+            if ! which wget 1>/dev/null; then
                 echo 'install wget first.'
                 exit
             fi
@@ -88,7 +88,7 @@ read -r -d '' btsync_config <<'HEREDOC'
   "shared_folders":
   [
     {
-      "secret": "$secret",                      // sync key, beginning with A is RW key, B is RO key.
+      "secret": "$secret", // sync key, starting with char 'A' is RW key, char 'B' is RO key.
       "dir": "$HOME/sync",                      // directory to sync
       "use_relay_server": false,                // no use relay server, used with search_lan option
       "use_tracker": false,                     // no use tracker server, used with search_lan option
@@ -136,7 +136,7 @@ HEREDOC
   mkdir -p ~/.btsync_nopain $source_directory
 
   echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_nopain.json[0m ...'
-  while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
+  while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
   btsync --config ~/.btsync_nopain.json |fgrep 'Error' && exit || echo 'Started.'
 
   # try to figure out current synchronization device network interface ip address.
@@ -183,17 +183,7 @@ Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_nopain/iss
 
 HEREDOC
                                               nc -l $ip 2000 <<-HEREDOC
-
-      # if ! which btsync &>/dev/null; then
-      #     if [[ \$(uname -m) == x86_64 ]]; then
-      #         wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz
-      #     else
-      #         wget -c -nc -O - https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz
-      #     fi | tar zxvf - btsync
-      #     PATH=.:\$PATH
-      # fi
-
-if ! which btsync &>/dev/null; then
+if ! which btsync 1>/dev/null; then
     case "\$OSTYPE" in
         darwin*)
             echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
@@ -211,14 +201,14 @@ if ! which btsync &>/dev/null; then
                 *)
                     download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
             esac
-            if !which wget &>/dev/null; then
+            if ! which wget 1>/dev/null; then
                 echo 'install wget first.'
                 exit
             fi
             wget -c -nc -O - \$download | tar zxvf - btsync
             PATH=.:\$PATH
             ;;
-        bsd*)
+        *BSD|*bsd)
             case \$(uname -m) in
                 i?86)
                     download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
@@ -227,7 +217,7 @@ if ! which btsync &>/dev/null; then
                     download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
                     ;;
             esac
-            if !which wget &>/dev/null; then
+            if ! which wget 1>/dev/null; then
                 echo 'install wget first.'
                 exit
             fi
@@ -244,14 +234,14 @@ fi
       export hostname=\$(hostname)
 
       echo '=> Creating config file ~/.btsync_nopain.json for slave device.'
-      echo "$btsync_config" |envsubst > ~/.btsync_nopain.json
+      echo '$btsync_config' |envsubst > ~/.btsync_nopain.json
 
       echo "=> Syncing directory is ~/sync, put file in there to start."
       echo "=> you can change directory name in config file later."
       mkdir -p ~/.btsync_nopain ~/sync
 
       echo '=> Starting syncing service with new config ...'
-      while echo -n '.'; sleep 0.3; pgrep '^btsync$' &>/dev/null; do pkill '^btsync$'; done
+      while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
       btsync --config ~/.btsync_nopain.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
                                           else
