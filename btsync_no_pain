@@ -2,52 +2,56 @@
 
 # download btsync binary and add to $PATH if necessary.
 
-if ! which btsync 1>/dev/null; then
-    case "$OSTYPE" in
-        darwin*)
-            echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
-            echo 'and install it manually, then run this script again.'
-            exit
-            ;;
-        linux*)
-            case $(uname -m) in
-                i?86)
-                    download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
-                    ;;
-                *64)
-                    download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
-                    ;;
-                *)
-                    download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
-            esac
-            if ! which wget 1>/dev/null; then
-                echo 'install wget first.'
+function download_btsync_binary () {
+    if ! which btsync 1>/dev/null; then
+        case "$OSTYPE" in
+            darwin*)
+                echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
+                echo 'and install it manually, then run this script again.'
                 exit
-            fi
-            wget -c -nc -O - $download | tar zxvf - btsync
-            PATH=.:$PATH
-            ;;
-        *BSD|*bsd)
-            case $(uname -m) in
-                i?86)
-                    download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
-                    ;;
-                *64)
-                    download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
-                    ;;
-            esac
-            if ! which wget 1>/dev/null; then
-                echo 'install wget first.'
+                ;;
+            linux*)
+                case $(uname -m) in
+                    i?86)
+                        download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
+                        ;;
+                    *64)
+                        download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
+                        ;;
+                    *)
+                        download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
+                esac
+                if ! which wget 1>/dev/null; then
+                    echo 'install wget first.'
+                    exit
+                fi
+                wget -c -nc -O - $download | tar zxvf - btsync
+                PATH=.:$PATH
+                ;;
+            *BSD|*bsd)
+                case $(uname -m) in
+                    i?86)
+                        download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
+                        ;;
+                    *64)
+                        download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
+                        ;;
+                esac
+                if ! which curl 1>/dev/null; then
+                    echo 'install curl first.'
+                    exit
+                fi
+                curl $download | tar zxvf - btsync
+                PATH=.:$PATH
+                ;;
+            *)
+                echo "$OSTYPE is not current supported by btsync."
                 exit
-            fi
-            curl $download | tar zxvf - btsync
-            PATH=.:$PATH
-            ;;
-        *)
-            echo "$OSTYPE is not current supported by btsync."
-            exit
-    esac
-fi
+        esac
+    fi
+}
+
+download_btsync_binary
 
 # save config pattern to a new variable.
 read -r -d '' btsync_config <<'HEREDOC'
@@ -183,52 +187,8 @@ Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_no_pain/is
 
 HEREDOC
                                               nc -l $ip 2000 <<-HEREDOC
-if ! which btsync 1>/dev/null; then
-    case "\$OSTYPE" in
-        darwin*)
-            echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
-            echo 'and install it manually, then run this script again.'
-            exit
-            ;;
-        linux*)
-            case \$(uname -m) in
-                i?86)
-                    download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
-                    ;;
-                *64)
-                    download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
-                    ;;
-                *)
-                    download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
-            esac
-            if ! which wget 1>/dev/null; then
-                echo 'install wget first.'
-                exit
-            fi
-            wget -c -nc -O - \$download | tar zxvf - btsync
-            PATH=.:\$PATH
-            ;;
-        *BSD|*bsd)
-            case \$(uname -m) in
-                i?86)
-                    download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
-                    ;;
-                *64)
-                    download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
-                    ;;
-            esac
-            if ! which wget 1>/dev/null; then
-                echo 'install wget first.'
-                exit
-            fi
-            curl \$download | tar zxvf - btsync
-            PATH=.:\$PATH
-            ;;
-        *)
-            echo "\$OSTYPE is not current supported by btsync."
-            exit
-    esac
-fi
+      eval '$(declare -f download_btsync_binary)'
+      download_btsync_binary
 
       export secret=$secret
       export hostname=\$(hostname)
