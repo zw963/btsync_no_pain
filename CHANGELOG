@@ -1,0 +1,3 @@
+2016/01/15: When deploy to slave device which same OS family and arch with master slave, slave is not internet need.
+	    Because we can transmit btsync binary from master device to slave device. (there is no need to download
+	    same btsync binary twice)

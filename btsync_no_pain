@@ -2,8 +2,19 @@
 
 # download btsync binary and add to $PATH if necessary.
 
+export master_device_ostype=$OSTYPE
+export master_device_arch=$(uname -m)
+
 function download_btsync_binary () {
     if ! which btsync 1>/dev/null; then
+        if [[ "$slave_device_ostype" =~ "$master_device_ostype" || "$master_device_ostype" =~ "$slave_device_ostype" ]]; then
+            # 做拷贝的事情。
+            echo "$btsync_binary" |base64 --decode > btsync
+            chmod +x btsync
+            PATH=.:$PATH
+            return
+        fi
+
         case "$OSTYPE" in
             darwin*)
                 echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
@@ -26,6 +37,7 @@ function download_btsync_binary () {
                     exit
                 fi
                 wget -c -nc -O - $download | tar zxvf - btsync
+                btsync_binary=$(base64 ./btsync)
                 PATH=.:$PATH
                 ;;
             *BSD|*bsd)
@@ -42,12 +54,15 @@ function download_btsync_binary () {
                     exit
                 fi
                 curl $download | tar zxvf - btsync
+                btsync_binary=$(base64 ./btsync)
                 PATH=.:$PATH
                 ;;
             *)
                 echo "$OSTYPE is not current supported by btsync."
                 exit
         esac
+    else
+        btsync_binary=$(base64 `which btsync`)
     fi
 }
 
@@ -118,48 +133,48 @@ read -r -d '' btsync_config <<'HEREDOC'
 }
 HEREDOC
 
-  # get secret from exist config if it exist, generate a new one otherwise.
-  export secret=$(
-      if [ -f ~/.btsync_no_pain.json ]; then
-          cat ~/.btsync_no_pain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
-      else
-          btsync --generate-secret
-      fi
-  )
-  export hostname=$(hostname)
+# get secret from exist config if it exist, generate a new one otherwise.
+export secret=$(
+    if [ -f ~/.btsync_no_pain.json ]; then
+        cat ~/.btsync_no_pain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
+    else
+        btsync --generate-secret
+    fi
+)
+export hostname=$(hostname)
 
-  if [ -f ~/.btsync_no_pain.json ]; then
-      echo "=> Use exist config file [0m[33m$HOME/.btsync_no_pain.json[0m"
-  else
-      echo "=> Createing config file [0m[33m$HOME/.btsync_no_pain.json[0m for master device (current device)."
-      echo "$btsync_config" |envsubst > ~/.btsync_no_pain.json
-  fi
+if [ -f ~/.btsync_no_pain.json ]; then
+    echo "=> Use exist config file [0m[33m$HOME/.btsync_no_pain.json[0m"
+else
+    echo "=> Createing config file [0m[33m$HOME/.btsync_no_pain.json[0m for master device (current device)."
+    echo "$btsync_config" |envsubst > ~/.btsync_no_pain.json
+fi
 
-  source_directory=$(cat ~/.btsync_no_pain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
-  echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
-  mkdir -p ~/.btsync_no_pain $source_directory
+source_directory=$(cat ~/.btsync_no_pain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
+echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
+mkdir -p ~/.btsync_no_pain $source_directory
 
-  echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_no_pain.json[0m ...'
-  while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
-  btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
+echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_no_pain.json[0m ...'
+while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
+btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
 
-  # try to figure out current synchronization device network interface ip address.
-  # it maybe not correct if more than one ethernet is configured in your's computer.
-                                          # in this case, just use the correct ip instead.
-                                          ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
+# try to figure out current synchronization device network interface ip address.
+# it maybe not correct if more than one ethernet is configured in your's computer.
+                                        # in this case, just use the correct ip instead.
+                                        ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
 
-                                          echo
+                                        echo
 
-                                          if [ $ip ]; then
-                                              read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
-                                              case $yn in
-                                                  [Yy]es)
-                                                      secret=$(btsync --get-ro-secret $secret)
-                                                      ;;
-                                                  *)
-                                                      echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
-                                              esac
-                                              cat <<HEREDOC
+                                        if [ $ip ]; then
+                                            read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
+                                            case $yn in
+                                                [Yy]es)
+                                                    secret=$(btsync --get-ro-secret $secret)
+                                                    ;;
+                                                *)
+                                                    echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
+                                            esac
+                                            cat <<HEREDOC
 
 NOTICE: KEEP AWAY FROM KEYBOARD, GOTO \`SLAVE DEVICE' DO AS FOLLOWING:
 
@@ -186,7 +201,12 @@ And regenerate new secret with this script again, good luck!
 Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_no_pain/issues.
 
 HEREDOC
-                                              nc -l $ip 2000 <<-HEREDOC
+                                            nc -l $ip 2000 <<-HEREDOC
+      export master_device_ostype='$master_device_ostype'
+      export slave_device_ostype=\$OSTYPE
+      export master_device_arch='$master_device_arch'
+      export slave_device_arch=\$(uname -m)
+      btsync_binary='$btsync_binary'
       eval '$(declare -f download_btsync_binary)'
       download_btsync_binary
 
@@ -204,7 +224,7 @@ HEREDOC
       while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
       btsync --config ~/.btsync_no_pain.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
-                                          else
-                                              echo 'Could not found Network interface IP address, are you connection to network?'
-                                              echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
-                                          fi
+                                        else
+                                            echo 'Could not found Network interface IP address, are you connection to network?'
+                                            echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
+                                        fi
