@@ -161,7 +161,8 @@ btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
 # try to figure out current synchronization device network interface ip address.
 # it maybe not correct if more than one ethernet is configured in your's computer.
                                         # in this case, just use the correct ip instead.
-                                        ip=$(ifconfig |grep 'inet addr'|grep -v '127.0.0.1' |head -n1|awk '{print $2}' |cut -d':' -f2)
+
+                                        ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet addr:' |cut -d':' -f2 |cut -d' ' -f1)
 
                                         echo
 
