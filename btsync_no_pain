@@ -162,8 +162,8 @@ btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
 # it maybe not correct if more than one ethernet is configured in your's computer.
                                         # in this case, just use the correct ip instead.
 
-                                        ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet addr:' |cut -d':' -f2 |cut -d' ' -f1)
-
+                                        # ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet addr:' |cut -d':' -f2 |cut -d' ' -f1)
+                                        ip=$(ip route show | grep default |egrep  -o '[0-9]+\.[0-9]+\.[0-9]+.[0-9[]')
                                         echo
 
                                         if [ $ip ]; then
