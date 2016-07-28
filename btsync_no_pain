@@ -202,7 +202,7 @@ And regenerate new secret with this script again, good luck!
 Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_no_pain/issues.
 
 HEREDOC
-                                            nc -l $ip 2000 <<-HEREDOC
+    nc -l -s $ip -p 2000 <<-HEREDOC
       export master_device_ostype='$master_device_ostype'
       export slave_device_ostype=\$OSTYPE
       export master_device_arch='$master_device_arch'
@@ -225,7 +225,7 @@ HEREDOC
       while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
       btsync --config ~/.btsync_no_pain.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
-                                        else
-                                            echo 'Could not found Network interface IP address, are you connection to network?'
-                                            echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
-                                        fi
+else
+    echo 'Could not found Network interface IP address, are you connection to network?'
+    echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
+fi
