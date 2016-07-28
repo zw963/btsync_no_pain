@@ -140,7 +140,7 @@ export secret=$(
     else
         btsync --generate-secret
     fi
-)
+       )
 export hostname=$(hostname)
 
 if [ -f ~/.btsync_no_pain.json ]; then
@@ -160,22 +160,22 @@ btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
 
 # try to figure out current synchronization device network interface ip address.
 # it maybe not correct if more than one ethernet is configured in your's computer.
-                                        # in this case, just use the correct ip instead.
+# in this case, just use the correct ip instead.
 
-                                        # ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet addr:' |cut -d':' -f2 |cut -d' ' -f1)
-                                        ip=$(ip route show | grep default |egrep  -o '[0-9]+\.[0-9]+\.[0-9]+.[0-9[]')
-                                        echo
+ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet ' |awk '{print $2}')
+# ip=$(ip route show | grep default |egrep  -o '[0-9]+\.[0-9]+\.[0-9]+.[0-9[]')
+echo
 
-                                        if [ $ip ]; then
-                                            read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
-                                            case $yn in
-                                                [Yy]es)
-                                                    secret=$(btsync --get-ro-secret $secret)
-                                                    ;;
-                                                *)
-                                                    echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
-                                            esac
-                                            cat <<HEREDOC
+if [ $ip ]; then
+    read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
+    case $yn in
+        [Yy]es)
+            secret=$(btsync --get-ro-secret $secret)
+            ;;
+        *)
+            echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
+    esac
+    cat <<HEREDOC
 
 NOTICE: KEEP AWAY FROM KEYBOARD, GOTO \`SLAVE DEVICE' DO AS FOLLOWING:
 
