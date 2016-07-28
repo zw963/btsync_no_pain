@@ -78,7 +78,7 @@ read -r -d '' btsync_config <<'HEREDOC'
   "device_name": "$USER@$hostname",
   "storage_path": "$HOME/.btsync_no_pain",
   "lan_encrypt_data": false,                    // disable encrypt in lan only, less cpu usage, better speed.
-  "send_statistics": false,                     // disable send statistical metrics to BitTorrent server.
+  // "send_statistics": false,                     // disable send statistical metrics to BitTorrent server.
   "sync_max_time_diff": 60,                     // default is 600 seconds, decrease for sync is more accuracy.
   "send_buf_size": 128,                         // default is 10 MB, increase for better speed.
   "recv_buf_size": 128,                         // default is 10 MB, increase for better speed.
