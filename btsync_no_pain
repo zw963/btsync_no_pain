@@ -1,88 +1,96 @@
 #!/bin/bash
 
-# download btsync binary and add to $PATH if necessary.
+# download rslsync binary and add to $PATH if necessary.
 
 export master_device_ostype=$OSTYPE
 export master_device_arch=$(uname -m)
 
-function download_btsync_binary () {
-    if ! which btsync 1>/dev/null; then
-        if [[ "$slave_device_ostype" =~ "$master_device_ostype" || "$master_device_ostype" =~ "$slave_device_ostype" ]]; then
+function download_binary () {
+    if ! which rslsync 1>/dev/null; then
+        if [[ "$slave_device_ostype" =~ "$master_device_ostype" || "$slave_device_ostype" =~ "$master_device_ostype" ]]; then
             # 做拷贝的事情。
-            echo "$btsync_binary" |base64 --decode > btsync
-            chmod +x btsync
-            PATH=.:$PATH
+            mkdir -p ~/utils/bin && echo "$sync_bianry" |base64 --decode > ~/utils/bin/rslsync
+            chmod +x ~/utils/bin/rslsync
+            PATH=~/utils/bin:$PATH
             return
         fi
 
         case "$OSTYPE" in
             darwin*)
-                echo 'Please download btsync from https://download-cdn.getsync.com/stable/osx/BitTorrent-Sync.dmg.'
+                echo 'Please download rslsync from https://download-cdn.resilio.com/stable/osx/Resilio-Sync.dmg.'
                 echo 'and install it manually, then run this script again.'
                 exit
                 ;;
             linux*)
                 case $(uname -m) in
                     i?86)
-                        download='https://download-cdn.getsync.com/stable/linux-i386/BitTorrent-Sync_i386.tar.gz'
+                        download='https://download-cdn.resilio.com/stable/linux-i386/resilio-sync_i386.tar.gz'
                         ;;
                     *64)
-                        download='https://download-cdn.getsync.com/stable/linux-x64/BitTorrent-Sync_x64.tar.gz'
+                        download='https://download-cdn.resilio.com/stable/linux-x64/resilio-sync_x64.tar.gz'
                         ;;
                     *)
-                        download='https://download-cdn.getsync.com/stable/linux-arm/BitTorrent-Sync_arm.tar.gz'
+                        download='https://download-cdn.resilio.com/stable/linux-arm/resilio-sync_arm.tar.gz'
                 esac
-                if ! which wget 1>/dev/null; then
-                    echo 'install wget first.'
+                if ! which curl 1>/dev/null; then
+                    echo 'install curl first.'
                     exit
                 fi
-                wget -c -nc -O - $download | tar zxvf - btsync
-                btsync_binary=$(base64 ./btsync)
-                PATH=.:$PATH
+                mkdir -p ~/utils/bin && curl -sS -L $download | tar zxvf - rslsync -C ~/utils/bin
+                sync_bianry=$(base64 ~/utils/bin/rslsync)
+                PATH=~/utils/bin:$PATH
                 ;;
             *BSD|*bsd)
                 case $(uname -m) in
                     i?86)
-                        download='https://download-cdn.getsync.com/stable/FreeBSD-i386/BitTorrent-Sync_freebsd_i386.tar.gz'
+                        download='https://download-cdn.resilio.com/stable/FreeBSD-i386/resilio-sync_freebsd_i386.tar.gz'
                         ;;
                     *64)
-                        download='https://download-cdn.getsync.com/stable/FreeBSD-x64/BitTorrent-Sync_freebsd_x64.tar.gz'
+                        download='https://download-cdn.resilio.com/stable/FreeBSD-x64/resilio-sync_freebsd_x64.tar.gz'
                         ;;
                 esac
                 if ! which curl 1>/dev/null; then
                     echo 'install curl first.'
                     exit
                 fi
-                curl $download | tar zxvf - btsync
-                btsync_binary=$(base64 ./btsync)
-                PATH=.:$PATH
+                mkdir -p ~/utils/bin && curl -sS -L $download | tar zxvf - rslsync -C  ~/utils/bin
+                sync_bianry=$(base64 ~/utils/bin/rslsync)
+                PATH=~/utils/bin:$PATH
                 ;;
             *)
-                echo "$OSTYPE is not current supported by btsync."
+                echo "$OSTYPE is not current supported by rslsync."
                 exit
         esac
     else
-        btsync_binary=$(base64 `which btsync`)
+        sync_bianry=$(base64 `which rslsync`)
     fi
 }
 
-download_btsync_binary
+download_binary
 
 # save config pattern to a new variable.
-read -r -d '' btsync_config <<'HEREDOC'
+read -r -d '' sync_config <<'HEREDOC'
 // Need more help, see http://help.getsync.com/hc/en-us/articles/204762669
 // http://sync-help.bittorrent.com/customer/en/portal/articles/1590260-preferences-explained?b_id=3885
 // Get a example config here: http://syncapp.bittorrent.com/support/sample.conf
 
+// Advanced preferences can be added to config file. Info is available at "https://help.getsync.com/hc/en-us/articles/207371636"
+
 {
   "device_name": "$USER@$hostname",
-  "storage_path": "$HOME/.btsync_no_pain",
-  "lan_encrypt_data": false,                    // disable encrypt in lan only, less cpu usage, better speed.
+ "listening_port": 0,                                 // randomize port
+  "storage_path": "$HOME/.sync",                       // default .sync dir created in current working directory
+  "lan_encrypt_data": true,
   // "send_statistics": false,                     // disable send statistical metrics to BitTorrent server.
   "sync_max_time_diff": 60,                     // default is 600 seconds, decrease for sync is more accuracy.
   "send_buf_size": 128,                         // default is 10 MB, increase for better speed.
   "recv_buf_size": 128,                         // default is 10 MB, increase for better speed.
   "max_file_size_for_versioning": 100,          // defaut is 1000 MB, here only version small version.
+
+  /* force use some default option */
+  "use_upnp": true,
+  "download_limit": 0,                          // no limit
+  "upload_limit": 0,                            // no limit
 
   /* global default option will be used. */
   // "check_for_updates": true,
@@ -92,9 +100,6 @@ read -r -d '' btsync_config <<'HEREDOC'
   // "bind_interface": "wlan0",                    // no set
   // "disk_low_priority": true,                    // minmum the impact to disk, less syncing speed.
   // "rate_limit_local_peers": false,
-  // "use_upnp": true,
-  // "download_limit": 0,                          // no limit
-  // "upload_limit": 0,                            // no limit
   // "profiler_enabled": false,
   // "max_file_size_diff_for_patching": 1000,      // MB
   // "folder_rescan_interval": 600,                // in second
@@ -104,22 +109,25 @@ read -r -d '' btsync_config <<'HEREDOC'
   // "peer_expiration_days": 7,                    // in day
   // "sync_trash_ttl": 30,                         // in day
 
+  // !!! if you set shared folders in config file WebUI will be DISABLED !!!
   "shared_folders":
   [
     {
-      "secret": "$secret", // sync key, starting with char 'A' is RW key, char 'B' is RO key.
+      "secret": "$secret",                      // sync key, starting with char 'A' is RW key, char 'B' is RO key.
       "dir": "$HOME/sync",                      // directory to sync
-      "use_relay_server": false,                // no use relay server, used with search_lan option
-      "use_tracker": false,                     // no use tracker server, used with search_lan option
+      "search_lan": true,                       // search localnet for other sync instance.
+      "use_relay_server": true,                // use relay server when direct connection fails, used with search_lan option
+      "use_tracker": true,                     // use tracker server, used with search_lan option
+      "use_sync_trash": true,                   // Store deleted files in folder archive
       "overwrite_changes": true,                // greedy restore files changed by RO device only if this file is
                                                 // not initializing created inside RO device. valid for RO device only.
+      "selective_sync" : false,                 // add folder in selective sync mode
       "known_hosts":                            // specify hosts to attempt connection without additional search
       [
         // "192.168.1.2:44444"
       ]
       /* folder default options will be used. */
-      // "search_lan": true,                       // search localnet for other btsync instance.
-      // "use_sync_trash": true,                   // Store deleted files in folder archive
+
     }
   ]
 
@@ -135,42 +143,43 @@ HEREDOC
 
 # get secret from exist config if it exist, generate a new one otherwise.
 export secret=$(
-    if [ -f ~/.btsync_no_pain.json ]; then
-        cat ~/.btsync_no_pain.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
+    if [ -f ~/.sync.json ]; then
+        cat ~/.sync.json |grep secret |cut -d':' -f2 |cut -d'"' -f2
     else
-        btsync --generate-secret
+        ~/utils/bin/rslsync --generate-secret
     fi
        )
 export hostname=$(hostname)
 
-if [ -f ~/.btsync_no_pain.json ]; then
-    echo "=> Use exist config file [0m[33m$HOME/.btsync_no_pain.json[0m"
+if [ -f ~/.sync.json ]; then
+    echo "=> Use exist config file [0m[33m$HOME/.sync.json[0m"
 else
-    echo "=> Createing config file [0m[33m$HOME/.btsync_no_pain.json[0m for master device (current device)."
-    echo "$btsync_config" |envsubst > ~/.btsync_no_pain.json
+    echo "=> Createing config file [0m[33m$HOME/.sync.json[0m for master device (current device)."
+    echo "$sync_config" |envsubst > ~/.sync.json
 fi
 
-source_directory=$(cat ~/.btsync_no_pain.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
-echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
-mkdir -p ~/.btsync_no_pain $source_directory
+config_directory=$(cat ~/.sync.json |grep '"storage_path":' |cut -d':' -f2 |cut -d'"' -f2)
+mkdir -p $config_directory
 
-echo '=> Starting syncing service with [0m[33mbtsync --config ~/.btsync_no_pain.json[0m ...'
-while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
-btsync --config ~/.btsync_no_pain.json |fgrep 'Error' && exit || echo 'Started.'
+source_directory=$(cat ~/.sync.json |grep '"dir":' |cut -d':' -f2 |cut -d'"' -f2)
+echo "=> Syncing directory is [0m[33m$source_directory[0m, put file in there to start."
+mkdir -p $source_directory
+
+echo '=> Starting syncing service with [0m[33mrslsync --config ~/.sync.json[0m ...'
+while echo -n '.'; sleep 0.3; pgrep '^rslsync$' 1>/dev/null; do pkill '^rslsync$'; done
+~/utils/bin/rslsync --config ~/.sync.json |fgrep 'Error' && exit || echo 'Started.'
 
 # try to figure out current synchronization device network interface ip address.
-# it maybe not correct if more than one ethernet is configured in your's computer.
-# in this case, just use the correct ip instead.
-
-ip=$(ifconfig `ip -o link show | awk '{print $2,$9}' |fgrep UP |cut -d':' -f1` |fgrep 'inet ' |awk '{print $2}')
-# ip=$(ip route show | grep default |egrep  -o '[0-9]+\.[0-9]+\.[0-9]+.[0-9[]')
+# if it not correct, just replace with correct ip instead.
+set -x
+ip=$(ip route show |awk '/src [0-9]{,3}\.[0-9]{,3}\.[0-9]{,3}.[0-9]{,3}/ {print $9}' |head -n1)
 echo
 
 if [ $ip ]; then
     read -p "Slave(target) device is synchronized with readonly access authority? [yes/no] (Ctrl+C to exit) " yn
     case $yn in
         [Yy]es)
-            secret=$(btsync --get-ro-secret $secret)
+            secret=$(rslsync --get-ro-secret $secret)
             ;;
         *)
             echo 'Slave(target) device is synchronized with [0m[33mfull ACCESS[0m authority!'
@@ -182,8 +191,8 @@ NOTICE: KEEP AWAY FROM KEYBOARD, GOTO \`SLAVE DEVICE' DO AS FOLLOWING:
 step 1. Run \`[0m[33mnc $ip 2000 | bash -s[0m' in slave device (another pc) to start sync, NO PAIN!
         (If IP address is not correct, use correct IP address instead)
 
-step 2. Copy btsync executable file downloaded (./btsync) to your's system \$PATH (e.g. /usr/local/bin)
-        add \`[0m[33mbtsync --config ~/.btsync_no_pain.json[0m' to system startup script (e.g. ~/.bashrc)
+step 2. Copy rslsync executable file downloaded (./rslsync) to your's system \$PATH (e.g. /usr/local/bin)
+        add \`[0m[33mrslsync --config ~/.sync.json[0m' to system startup script (e.g. ~/.bashrc)
 
 NO CONFIG is needed, start to sync within 10 seconds with NO PAIN!
 
@@ -196,36 +205,39 @@ adjust configuration to fit your demand.
 [0m[33mNOT TOLD ANYONE WHOSE NOT TRUST THE SECRET GENERATE FOR YOU!!
 THE MAN HAVE THIS KEY CAN DAMAGE YOUR'S DATA!![0m
 
-If you found your's secret is leak, remove ~/.btsync_no_pain.json on all syncing device immediately.
+If you found your's secret is leak, remove ~/.sync.json on all syncing device immediately.
 And regenerate new secret with this script again, good luck!
 
 Any suggest/feed/bugfix is welcome at https://github.com/zw963/btsync_no_pain/issues.
 
 HEREDOC
-    nc -l -s $ip -p 2000 <<-HEREDOC
+    # nc -l -s $ip -p 2000
+    nc -l -p 2000 <<-HEREDOC
       export master_device_ostype='$master_device_ostype'
       export slave_device_ostype=\$OSTYPE
       export master_device_arch='$master_device_arch'
       export slave_device_arch=\$(uname -m)
-      btsync_binary='$btsync_binary'
-      eval '$(declare -f download_btsync_binary)'
-      download_btsync_binary
+      sync_bianry='$sync_bianry'
+      eval '$(declare -f download_binary)'
+      download_binary
 
       export secret=$secret
       export hostname=\$(hostname)
 
-      echo '=> Creating config file ~/.btsync_no_pain.json for slave device.'
-      echo '$btsync_config' |envsubst > ~/.btsync_no_pain.json
+      echo '=> Creating config file ~/.sync.json for slave device.'
+      echo '$sync_config' |envsubst > ~/.sync.json
 
       echo "=> Syncing directory is ~/sync, put file in there to start."
       echo "=> you can change directory name in config file later."
-      mkdir -p ~/.btsync_no_pain ~/sync
+      mkdir -p ~/.sync ~/sync
 
       echo '=> Starting syncing service with new config ...'
-      while echo -n '.'; sleep 0.3; pgrep '^btsync$' 1>/dev/null; do pkill '^btsync$'; done
-      btsync --config ~/.btsync_no_pain.json |fgrep 'Error' || echo 'Started.'
+      while echo -n '.'; sleep 0.3; pgrep '^rslsync$' 1>/dev/null; do pkill '^rslsync$'; done
+      rslsync --config ~/.sync.json |fgrep 'Error' || echo 'Started.'
 HEREDOC
 else
     echo 'Could not found Network interface IP address, are you connection to network?'
     echo 'Need help for improved ip address probe, https://github.com/zw963/btsync_no_pain/issues.'
 fi
+
+## DATA
